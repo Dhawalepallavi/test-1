@@ -1,0 +1,84 @@
+- hosts: webserver
+  become: yes
+  become_method: sudo
+  become_user: root
+
+  vars:
+    package_name_npm: npm
+    service_name_npm: npm
+    package_name_git: git
+
+  tasks:
+    - name: install git module on ubuntu
+      apt:
+        name: git
+        state: latest
+        update_cache: yes
+      when: ansible_distribution== "Ubuntu"
+
+    - name: install git module on redhat
+      yum:
+        name: git
+        state: latest
+        update_cache: yes
+      when: ansible_distribution== "RedHat"
+
+    - name: Clone the code on remote machine
+      git:
+        repo: "https://github.com/Dhawalepallavi/reactjs-demo.git"
+        dest: "/root/app"
+        accept_hostkey: yes
+        force: yes
+        version: master
+
+    - name: Install npm on Ubuntu
+      apt:
+        name: "{{package_name_npm}}"
+        state: latest
+        update_cache: yes
+      when: ansible_distribution== "Ubuntu"
+
+    - name: Install npm on Red Hat
+      yum:
+        name: "{{package_name_npm}}"
+        state: latest
+        update_cache: yes
+      when: ansible_distribution== "RedHat"
+
+    - name: Install npm packages
+      command: npm install
+      args:
+        chdir: /root/app
+
+    - name: Compilation npm dependesies on ubuntu
+      command: npm run build
+      args:
+        chdir: /root/app
+      when: ansible_distribution== "Ubuntu"
+
+#    - name: Compilation npm dependesies on redhat
+#     command: npm run build
+#      args:
+#        chdir: /root/app
+#      when: ansible_distribution== "RedHat"
+
+    - name: Install apache on remote machine
+      apt:
+        name: apache2
+        state: latest
+        update_cache: yes
+      when: ansible_distribution== "Ubuntu"
+
+    - name: enable the service
+      service:
+        enabled: true
+        service: apache2
+        state: started
+      when: ansible_distribution== "Ubuntu"
+
+    - name: copy the index.html to remote machine
+      copy:
+         src: /root/app/build/index.html
+         dest: /var/www/html/index.html
+         remote_src: yes
+      when: ansible_distribution== "Ubuntu"
